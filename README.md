@@ -35,6 +35,9 @@ Please avoid wasting time for complex project configuration. Use configuration f
     Install go https://golang.org/dl/
     run cmd 'go run main.go'
 
+### API domain
+    https://ae-test-task.herokuapp.com/
+
 ### Endpoints
     - GET:  pingEndpoint = "/ping"
     - GET:  getAccountBalance = "/account/"
