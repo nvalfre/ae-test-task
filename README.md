@@ -31,4 +31,4 @@ Please avoid wasting time for complex project configuration. Use configuration f
     Readme.
 
 ### Run
-    
+    go run main.go
