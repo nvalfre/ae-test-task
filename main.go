@@ -1,6 +1,6 @@
 package main
 
-import "minesweeper-API/app/server"
+import "ae-test-task/app/server"
 
 func main() {
 	server.Start()
