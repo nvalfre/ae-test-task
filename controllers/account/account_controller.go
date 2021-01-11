@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"net/http"
+	"time"
 )
 
 var db = memory.New()
@@ -21,25 +22,45 @@ type accountControllerInterface interface {
 	InsertTransaction(c *gin.Context)
 	FetchTransactionHistory(c *gin.Context)
 	FindTransactionByID(c *gin.Context)
+	GetAccountBalance(c *gin.Context)
 }
 type accountController struct {
 	AccountService services.AccountService
 }
 
 func init() {
-
 	Controller = &accountController{
 		services.AccountService{
 			AccountBuilderService: builder.AccountBuilderService{
 				Store: accountStorage,
 			},
-			Store:            accountStorage,
-			AccountValidator: validator.AccountValidatorService{},
+			Store:                accountStorage,
+			AccountValidator:     validator.AccountValidatorService{},
 			TransactionValidator: validator.TransactionValidatorService{},
 		},
 	}
 	Controller.CreateNewAccount("dev-user")
 }
+
+func (controller *accountController) GetAccountBalance(c *gin.Context) {
+	account, err := controller.AccountService.GetAccount()
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"file":    "account_controller",
+			"service": "get",
+			"method":  "get account",
+			"err":     err,
+			"message": "cannot get account",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, Response{
+		Status:  http.StatusOK,
+		Message: account,
+	})
+}
+
 func (controller *accountController) CreateNewAccount(user string) {
 	account, err := controller.AccountService.CreateAccount(user)
 	if err != nil {
@@ -56,44 +77,61 @@ func (controller *accountController) CreateNewAccount(user string) {
 }
 
 func (controller *accountController) InsertTransaction(c *gin.Context) {
-	go func() {
-		var tran *domain.TransactionBody
-		if err := c.ShouldBindJSON(&tran); err != nil {
-			logrus.WithFields(logrus.Fields{
-				"file":    "account_controller",
-				"service": "bind",
-				"method":  "InsertTransaction",
-				"err":     err,
-				"message": "cannot bind json transaction",
-			})
-			c.JSON(http.StatusBadRequest, Response{
-				Status:  http.StatusBadRequest,
-				Message: "cannot bind json transaction",
-			})
-			return
-		}
-		transaction, err := controller.AccountService.InsertTransaction(tran)
-
-		if err != nil {
-			logrus.WithFields(logrus.Fields{
-				"file":    "account_controller",
-				"service": "start",
-				"method":  "InsertTransaction",
-				"err":     err,
-				"message": "cannot insert transaction",
-			})
-			c.JSON(http.StatusInternalServerError, Response{
-				Status:  http.StatusInternalServerError,
-				Message: "cannot insert transaction",
-			})
-			return
-		}
-		c.JSON(http.StatusOK, Response{
-			Status:  http.StatusOK,
-			Message: transaction,
+	var tran *domain.TransactionReq
+	if err := c.ShouldBindJSON(&tran); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"file":    "account_controller",
+			"service": "bind",
+			"method":  "InsertTransaction",
+			"err":     err,
+			"message": "cannot bind json transaction",
 		})
-	}()
+		c.JSON(http.StatusBadRequest, Response{
+			Status:  http.StatusBadRequest,
+			Message: "cannot bind json transaction",
+		})
+		return
+	}
+	err, transaction := controller.executeTransaction(tran)
+
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"file":    "account_controller",
+			"service": "start",
+			"method":  "InsertTransaction",
+			"err":     err,
+			"message": "cannot insert transaction",
+		})
+		c.JSON(http.StatusInternalServerError, Response{
+			Status:  http.StatusInternalServerError,
+			Message: "cannot insert transaction",
+		})
+		return
+	}
+	c.JSON(http.StatusOK, Response{
+		Status:  http.StatusOK,
+		Message: transaction,
+	})
 	return
+}
+
+func (controller *accountController) executeTransaction(tran *domain.TransactionReq) (error, *domain.TransactionBody) {
+	trans := make(chan *domain.TransactionBody, 1)
+	errs := make(chan error, 1)
+
+	go func() {
+		defer close(trans)
+		defer close(errs)
+		transaction, err := controller.AccountService.InsertTransaction(tran)
+		if err != nil {
+			errs <- err
+		}
+		trans <- transaction
+	}()
+	time.Sleep(1 * time.Millisecond)
+	err := <-errs
+	transaction := <-trans
+	return err, transaction
 }
 
 func (controller *accountController) FetchTransactionHistory(c *gin.Context) {

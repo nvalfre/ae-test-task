@@ -8,11 +8,13 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
+	"time"
 )
 
 type AccountServiceInterface interface {
 	CreateAccount(user string) (*domain.Account, error)
-	InsertTransaction(*domain.TransactionBody) (*domain.TransactionBody, error)
+	GetAccount() (*domain.Account, error)
+	InsertTransaction(req *domain.TransactionReq) (*domain.TransactionBody, error)
 	TransactionHistory() (map[string]*domain.TransactionBody, error)
 	FindTransactionByID(string2 string) (*domain.TransactionBody, error)
 }
@@ -59,27 +61,33 @@ func (s *AccountService) CreateAccount(user string) (*domain.Account, error) {
 	return account, err
 }
 
-func (s *AccountService) parseUUID(uuid uuid.UUID) string {
-	return fmt.Sprintf("%s", uuid)
+func (s *AccountService) GetAccount() (*domain.Account, error) {
+	logrus.WithFields(logrus.Fields{
+		"file":    "account_service",
+		"service": "search",
+		"method":  "GetAccount",
+	})
+	account, err := s.Store.GetAccount()
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"file":    "account_service",
+			"service": "search",
+			"method":  "GetAccount",
+			"err":     err,
+			"message": "cannot get account",
+		})
+		return nil, err
+	}
+	return account, nil
 }
-func (s *AccountService) InsertTransaction(transaction *domain.TransactionBody) (*domain.TransactionBody, error) {
+func (s *AccountService) InsertTransaction(req *domain.TransactionReq) (*domain.TransactionBody, error) {
 	logrus.WithFields(logrus.Fields{
 		"file":    "account_service",
 		"service": "insert",
 		"method":  "InsertTransaction",
 	})
-	err := s.Store.InsertNewTransaction(transaction)
-	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"file":    "account_service",
-			"service": "insert",
-			"method":  "InsertTransaction",
-			"err":     err,
-			"message": "cannot insert new transaction",
-		})
-		return nil, err
-	}
-	err = s.TransactionValidator.Validate(transaction)
+
+	err := s.TransactionValidator.Validate(req)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"file":    "account_service",
@@ -89,7 +97,27 @@ func (s *AccountService) InsertTransaction(transaction *domain.TransactionBody) 
 		})
 		return nil, err
 	}
-	return transaction, err
+
+	trUUID := uuid.New()
+	date := fmt.Sprintf("%s", time.Now())
+	transaction := domain.TransactionBody{
+		ID:            fmt.Sprintf("%s", trUUID),
+		Amount:        req.Amount,
+		CardType:      req.CardType,
+		EffectiveDate: &date,
+	}
+	err = s.Store.InsertNewTransaction(&transaction)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"file":    "account_service",
+			"service": "insert",
+			"method":  "InsertTransaction",
+			"err":     err,
+			"message": "cannot insert new req",
+		})
+		return nil, err
+	}
+	return &transaction, err
 }
 
 func (s *AccountService) TransactionHistory() (map[string]*domain.TransactionBody, error) {
@@ -130,4 +158,8 @@ func (s *AccountService) FindTransactionByID(id string) (*domain.TransactionBody
 		return nil, err
 	}
 	return transaction, nil
+}
+
+func (s *AccountService) parseUUID(uuid uuid.UUID) string {
+	return fmt.Sprintf("%s", uuid)
 }

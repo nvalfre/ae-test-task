@@ -5,5 +5,10 @@ type Balance struct {
 }
 
 func (b *Balance) ImpactNewTransaction(transaction TransactionBody) {
-	b.amount += *transaction.Amount
+	if *transaction.CardType == Debit {
+		b.amount -= *transaction.Amount
+	}
+	if *transaction.CardType == Credit {
+		b.amount += *transaction.Amount
+	}
 }

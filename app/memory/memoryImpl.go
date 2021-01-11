@@ -9,6 +9,7 @@ import (
 
 type AccountStoreInterface interface {
 	InsertAccount(account *domain.Account) error
+	GetAccount() (*domain.Account, error)
 	InsertNewTransaction(transaction *domain.TransactionBody) error
 	FindAccountByID(string) (*domain.TransactionBody, error)
 	FindTransactionByID(string) (*domain.TransactionBody, error)
@@ -25,7 +26,7 @@ func NewAccountStoreService(db *DB) *AccountStoreService {
 	return &AccountStoreService{db: db}
 }
 
-func (s *AccountStoreService) InsertAccount(account *domain.Account) error{
+func (s *AccountStoreService) InsertAccount(account *domain.Account) error {
 	if _, ok := s.db.accounts[account.ID]; ok {
 		return errors.New("account already exist")
 	}
@@ -34,7 +35,15 @@ func (s *AccountStoreService) InsertAccount(account *domain.Account) error{
 	return nil
 }
 
-func (s *AccountStoreService) InsertNewTransaction(transaction *domain.TransactionBody) error{
+func (s *AccountStoreService) GetAccount() (*domain.Account, error) {
+	account := s.db.accounts[uniqueAccount]
+	if account == nil {
+		return nil, errors.New("invalid response searching account")
+	}
+	return account, nil
+}
+
+func (s *AccountStoreService) InsertNewTransaction(transaction *domain.TransactionBody) error {
 	if _, ok := s.db.transactions[transaction.ID]; ok {
 		return errors.New("transaction already exist")
 	}
@@ -43,7 +52,7 @@ func (s *AccountStoreService) InsertNewTransaction(transaction *domain.Transacti
 		"file":    "memory_service",
 		"service": "insert_transaction",
 		"method":  "InsertNewTransaction",
-		"message":  fmt.Sprintf("Transaction inserted successfully, transaction: %s", transaction.ID),
+		"message": fmt.Sprintf("Transaction inserted successfully, transaction: %s", transaction.ID),
 	})
 	s.insertTransactionIntoAccount(transaction)
 	return nil
@@ -62,20 +71,20 @@ func (s *AccountStoreService) insertTransactionIntoAccount(transaction *domain.T
 	})
 }
 
-func (s *AccountStoreService) FindAccountByID(id string) (*domain.Account, error){
+func (s *AccountStoreService) FindAccountByID(id string) (*domain.Account, error) {
 	if account, ok := s.db.accounts[id]; ok {
 		return account, nil
 	}
 	return nil, errors.New("account not found")
 }
 
-func (s *AccountStoreService) FindTransactionByID(id string) (*domain.TransactionBody, error){
+func (s *AccountStoreService) FindTransactionByID(id string) (*domain.TransactionBody, error) {
 	if transaction, ok := s.db.transactions[id]; ok {
 		return transaction, nil
 	}
 	return nil, errors.New("transaction not found")
 }
 
-func (s *AccountStoreService) FetchTransactions() (map[string]*domain.TransactionBody, error){
+func (s *AccountStoreService) FetchTransactions() (map[string]*domain.TransactionBody, error) {
 	return s.db.transactions, nil
 }
