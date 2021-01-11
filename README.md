@@ -1,6 +1,7 @@
 **_AE test task_**
 
 ####Description:https://agileengine.bitbucket.io/fsNDJmGOAwqCpzZx/
+
 ####Recomnedations: https://agileengine.bitbucket.io/fsNDJmGOAwqCpzZx/api/
 
 **Core tasks:**
@@ -31,4 +32,17 @@ Please avoid wasting time for complex project configuration. Use configuration f
     Readme.
 
 ### Run
-    go run main.go
+    Install go https://golang.org/dl/
+    run cmd 'go run main.go'
+
+### Endpoints
+    - GET:  pingEndpoint = "/ping"
+    - GET:  getAccountBalance = "/account/"
+    - POST:  insertTransaction = "/account/transaction"
+        Body example:
+            {
+            "card_type": "debit",
+            "amount": 10
+        }
+    - GET:  fetchAccountTransactions = "/account/transactions"
+    - GET:  findTransactionById = "/transactions/:id"
