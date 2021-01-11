@@ -13,7 +13,7 @@ const findTransactionById = "/transactions/:id"
 
 func InitRoutes(r *gin.Engine) {
 	r.GET(pingEndpoint, ping.Ping())
-	r.POST(fetchAccountTransactions, account.Controller.InsertTransaction)
-	r.GET(insertTransaction, account.Controller.FetchTransactionHistory)
+	r.POST(insertTransaction, account.Controller.InsertTransaction)
+	r.GET(fetchAccountTransactions, account.Controller.FetchTransactionHistory)
 	r.GET(findTransactionById, account.Controller.FindTransactionByID)
 }
