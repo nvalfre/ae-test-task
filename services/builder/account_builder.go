@@ -23,7 +23,7 @@ func (s *AccountBuilderService) BuildNewAccount(uuid, userID string) (*domain.Ac
 	account := &domain.Account{
 		ID:                   fmt.Sprintf("%s", uuid),
 		User:                 &domain.UserBody{ID: &userID},
-		TransactionMovements: make([]domain.TransactionBody, 5),
+		TransactionMovements: make([]domain.TransactionBody, 0),
 		Balance:              &domain.Balance{},
 	}
 	logrus.WithFields(logrus.Fields{

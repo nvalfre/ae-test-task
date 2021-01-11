@@ -92,7 +92,29 @@ func (s *AccountService) InsertTransaction(req *domain.TransactionReq) (*domain.
 		logrus.WithFields(logrus.Fields{
 			"file":    "account_service",
 			"service": "validate",
-			"method":  "validate_transaction",
+			"method":  "InsertTransaction",
+			"error":   err,
+		})
+		return nil, err
+	}
+
+	account, err := s.GetAccount()
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"file":    "account_service",
+			"service": "get_account",
+			"method":  "InsertTransaction",
+			"error":   err,
+		})
+		return nil, err
+	}
+
+	err = s.AccountValidator.ValidateTransactionOnAccount(account, req)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"file":    "account_service",
+			"service": "validate",
+			"method":  "validate_account",
 			"error":   err,
 		})
 		return nil, err

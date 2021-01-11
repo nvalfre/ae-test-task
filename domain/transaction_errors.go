@@ -1,4 +1,4 @@
 package domain
 
-const NegativeAmountError = "negative amount on transaction"
+const NegativeAmountError = "negative Amount on transaction"
 const InvalidTypeError = "invalid transaction type"
