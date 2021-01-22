@@ -13,14 +13,14 @@ type AccountValidatorInterface interface {
 }
 
 func (v *AccountValidatorService) ValidateTransactionOnAccount(account *domain.Account, req *domain.TransactionReq) error {
-	if err := validateRequest(account.Balance.Amount, *req.Amount, req.CardType); err != nil {
+	if err := validateRequest(account.Balance.Amount, *req.Amount, *req.CardType); err != nil {
 		return err
 	}
 	return nil
 }
 
-func validateRequest(account float64, req float64, cardType *string) error {
-	switch *cardType {
+func validateRequest(account float64, req float64, cardType string) error {
+	switch cardType {
 	case domain.Debit:
 		if (account - req) < 0 {
 			return errors.New(domain.NegativeAmountError)

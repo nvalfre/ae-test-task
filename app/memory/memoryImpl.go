@@ -11,7 +11,7 @@ type AccountStoreInterface interface {
 	InsertAccount(account *domain.Account) error
 	GetAccount() (*domain.Account, error)
 	InsertNewTransaction(transaction *domain.TransactionBody) error
-	FindAccountByID(string) (*domain.TransactionBody, error)
+	FindAccountByID(string) (*domain.Account, error)
 	FindTransactionByID(string) (*domain.TransactionBody, error)
 	FetchTransactions() (map[string]*domain.TransactionBody, error)
 }
